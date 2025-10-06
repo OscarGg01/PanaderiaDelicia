@@ -18,6 +18,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import android.util.Patterns
 
 @Composable
 fun RegisterScreen(
@@ -33,6 +34,11 @@ fun RegisterScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // helper local
+    fun isValidEmailLocal(email: String): Boolean {
+        return email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+
     Surface(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -46,22 +52,47 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre") },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Correo electrónico") }, modifier = Modifier.fillMaxWidth())
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Correo electrónico") },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Contraseña") }, modifier = Modifier.fillMaxWidth())
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Contraseña") },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(onClick = {
-                    authVm.register(email, password, name) { success, err ->
-                        if (success) {
-                            // Registro exitoso: volvemos a Home (la shared authVm ya tiene estado actualizado)
-                            onBack()
-                        } else {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(err ?: "Error")
+                    // Validaciones en UI: email válido y requisitos básicos
+                    when {
+                        name.isBlank() -> scope.launch { snackbarHostState.showSnackbar("Ingresa tu nombre") }
+                        !isValidEmailLocal(email) -> scope.launch { snackbarHostState.showSnackbar("Ingresa un correo válido (ejemplo@correo.com)") }
+                        password.length < 4 -> scope.launch { snackbarHostState.showSnackbar("La contraseña debe tener al menos 4 caracteres") }
+                        else -> {
+                            // Llamada al ViewModel / repo (que también valida)
+                            authVm.register(email.trim(), password, name.trim()) { success, err ->
+                                if (success) {
+                                    onBack() // vuelve a Home (authVm comparte estado)
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(err ?: "Error al crear cuenta")
+                                    }
+                                }
                             }
                         }
                     }

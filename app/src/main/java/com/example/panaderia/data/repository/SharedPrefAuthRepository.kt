@@ -7,6 +7,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import android.util.Patterns
 
 @Singleton
 class SharedPrefAuthRepository @Inject constructor(
@@ -32,9 +33,18 @@ class SharedPrefAuthRepository @Inject constructor(
 
     override suspend fun register(email: String, password: String, name: String): Result<User> {
         return withContext(Dispatchers.IO) {
-            if (email.isBlank() || password.length < 4 || name.isBlank()) {
-                return@withContext Result.failure(Exception("Datos inválidos"))
+            // Validaciones: email válido, password mínimo, name no vacío
+            if (name.isBlank()) {
+                return@withContext Result.failure(Exception("Nombre inválido"))
             }
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                return@withContext Result.failure(Exception("Correo inválido"))
+            }
+            if (password.length < 4) {
+                return@withContext Result.failure(Exception("Contraseña demasiado corta"))
+            }
+
+            // resto del registro (guardado en prefs)
             val user = User(email = email, name = name)
             prefs.edit()
                 .putString(KEY_USER, userToJson(user))
