@@ -17,9 +17,9 @@ import com.example.panaderia.ui.navigation.Routes
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
-    vm: AuthViewModel = hiltViewModel()
+    authVm: AuthViewModel = hiltViewModel()
 ) {
-    val state by vm.state.collectAsState()
+    val state by authVm.state.collectAsState()
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -46,24 +46,25 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(onClick = {
-                        // 1) cerrar sesión en el repositorio / viewmodel
-                        vm.logout()
+                        // Navegar a historial de pedidos
+                        navController.navigate(Routes.ORDERS)
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Ver historial")
+                    }
 
-                        // 2) tratar de regresar a HOME limpiamente
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(onClick = {
+                        authVm.logout()
                         val popped = navController.popBackStack(route = Routes.HOME, inclusive = false)
                         if (!popped) {
-                            // Si no había Home en backstack, navegar allí (evitar duplicados)
                             navController.navigate(Routes.HOME) {
                                 launchSingleTop = true
-                                // limpia hasta el inicio para evitar volver acá
-                                // opcional: popUpTo(navController.graph.startDestinationId) { inclusive = false }
                             }
                         }
                     }, modifier = Modifier.fillMaxWidth()) {
                         Text("Cerrar sesión")
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
 
                     Spacer(modifier = Modifier.height(12.dp))
 

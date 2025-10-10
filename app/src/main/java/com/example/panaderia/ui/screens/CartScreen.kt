@@ -111,17 +111,14 @@ fun CartScreen(
 
             Button(
                 onClick = {
-                    orderVm.placeOrder { success ->
+                    orderVm.placeOrder { success, errorMsg ->
                         if (success) {
-                            navController.navigate(Routes.ORDER) {
-                                launchSingleTop = true
-                            }
+                            navController.navigate(Routes.ORDER) { launchSingleTop = true }
                         } else {
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Error al registrar el pedido. Intenta de nuevo.")
-                            }
+                            scope.launch { snackbarHostState.showSnackbar(errorMsg ?: "Error al registrar pedido") }
                         }
                     }
+
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

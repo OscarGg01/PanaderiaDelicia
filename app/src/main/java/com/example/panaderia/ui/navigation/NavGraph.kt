@@ -13,13 +13,13 @@ import com.example.panaderia.ui.screens.LoginScreen
 import com.example.panaderia.ui.screens.RegisterScreen
 import com.example.panaderia.ui.screens.ProfileScreen
 import com.example.panaderia.ui.screens.CartScreen
+import com.example.panaderia.ui.screens.OrderScreen
+import com.example.panaderia.ui.screens.OrdersScreen
 import com.example.panaderia.ui.viewmodel.HomeViewModel
 import com.example.panaderia.ui.viewmodel.AuthViewModel
 import com.example.panaderia.ui.viewmodel.CartViewModel
-import androidx.navigation.NavHostController
-import com.example.panaderia.ui.screens.CartScreen
-import com.example.panaderia.ui.screens.OrderScreen
 import com.example.panaderia.ui.viewmodel.OrderViewModel
+import androidx.navigation.NavHostController
 
 object Routes {
     const val SPLASH = "splash"
@@ -29,13 +29,13 @@ object Routes {
     const val PROFILE = "profile"
     const val CART = "cart"
     const val ORDER = "order"
+    const val ORDERS = "orders"
 }
 
 @Composable
 fun BakeryNavGraph() {
     val navController = rememberNavController()
 
-    // Instancias compartidas
     val authVm: AuthViewModel = hiltViewModel()
     val cartVm: CartViewModel = hiltViewModel()
     val orderVm: OrderViewModel = hiltViewModel()
@@ -53,8 +53,6 @@ fun BakeryNavGraph() {
             val homeVm: HomeViewModel = hiltViewModel()
             val uiState by homeVm.uiState.collectAsState()
             val authState by authVm.state.collectAsState()
-
-            // recolectar items del carrito y sumar cantidades
             val cartItems by cartVm.itemsState.collectAsState()
             val cartCount = cartItems.sumOf { it.quantity }
 
@@ -63,7 +61,7 @@ fun BakeryNavGraph() {
                 onAddToCart = { product -> homeVm.addToCart(product) },
                 navController = navController,
                 authState = authState,
-                cartCount = cartCount // <-- nuevo parámetro
+                cartCount = cartCount
             )
         }
 
@@ -85,21 +83,30 @@ fun BakeryNavGraph() {
 
         composable(Routes.PROFILE) {
             ProfileScreen(
-                navController,
-                authVm
+                navController = navController,
+                authVm = authVm
             )
         }
 
         composable(Routes.CART) {
-            CartScreen(navController)
-        }
-
-        composable(Routes.CART) {
-            CartScreen(navController = navController, orderVm = orderVm)
+            CartScreen(
+                navController = navController,
+                orderVm = orderVm
+            )
         }
 
         composable(Routes.ORDER) {
-            OrderScreen(navController = navController, orderVm = orderVm)
+            OrderScreen(
+                navController = navController,
+                orderVm = orderVm
+            )
+        }
+
+        composable(Routes.ORDERS) {
+            OrdersScreen(
+                navController = navController,
+                orderVm = orderVm
+            )
         }
     }
 }
