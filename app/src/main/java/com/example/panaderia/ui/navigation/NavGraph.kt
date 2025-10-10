@@ -17,6 +17,9 @@ import com.example.panaderia.ui.viewmodel.HomeViewModel
 import com.example.panaderia.ui.viewmodel.AuthViewModel
 import com.example.panaderia.ui.viewmodel.CartViewModel
 import androidx.navigation.NavHostController
+import com.example.panaderia.ui.screens.CartScreen
+import com.example.panaderia.ui.screens.OrderScreen
+import com.example.panaderia.ui.viewmodel.OrderViewModel
 
 object Routes {
     const val SPLASH = "splash"
@@ -25,6 +28,7 @@ object Routes {
     const val REGISTER = "register"
     const val PROFILE = "profile"
     const val CART = "cart"
+    const val ORDER = "order"
 }
 
 @Composable
@@ -34,6 +38,7 @@ fun BakeryNavGraph() {
     // Instancias compartidas
     val authVm: AuthViewModel = hiltViewModel()
     val cartVm: CartViewModel = hiltViewModel()
+    val orderVm: OrderViewModel = hiltViewModel()
 
     NavHost(navController = navController, startDestination = Routes.SPLASH) {
         composable(Routes.SPLASH) {
@@ -87,6 +92,14 @@ fun BakeryNavGraph() {
 
         composable(Routes.CART) {
             CartScreen(navController)
+        }
+
+        composable(Routes.CART) {
+            CartScreen(navController = navController, orderVm = orderVm)
+        }
+
+        composable(Routes.ORDER) {
+            OrderScreen(navController = navController, orderVm = orderVm)
         }
     }
 }

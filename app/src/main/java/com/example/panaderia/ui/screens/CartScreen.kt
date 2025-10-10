@@ -19,21 +19,28 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import coil.request.ImageRequest
+import com.example.panaderia.ui.viewmodel.OrderViewModel
+import com.example.panaderia.ui.navigation.Routes
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
     navController: NavHostController,
+    orderVm: OrderViewModel = hiltViewModel(), // puedes pasar la instancia desde NavGraph
     vm: CartViewModel = hiltViewModel()
 ) {
-    // Recolectar estado reactivo desde el ViewModel
     val items by vm.itemsState.collectAsState()
     val total by vm.totalState.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             SmallTopAppBar(title = { Text("Carrito") })
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
         Column(
             Modifier
@@ -42,7 +49,6 @@ fun CartScreen(
                 .padding(padding)
         ) {
             if (items.isEmpty()) {
-                // Carrito vacío: mostrar mensaje y botón Volver
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -103,8 +109,23 @@ fun CartScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(onClick = { /* ir a pasarela de pagos más adelante */ }, modifier = Modifier.fillMaxWidth()) {
-                Text("Pagar")
+            Button(
+                onClick = {
+                    orderVm.placeOrder { success ->
+                        if (success) {
+                            navController.navigate(Routes.ORDER) {
+                                launchSingleTop = true
+                            }
+                        } else {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Error al registrar el pedido. Intenta de nuevo.")
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Realizar pedido")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -130,7 +151,6 @@ fun CartRow(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Imagen: si existe imageRes usamos painterResource, si no usamos AsyncImage con URL
         Box(modifier = Modifier.size(80.dp)) {
             val ctx = LocalContext.current
             if (entry.product.imageRes != null) {
@@ -176,11 +196,8 @@ fun CartRow(
                 Text("+")
             }
 
-            // qtyText se sincroniza con entry.quantity usando LaunchedEffect
             var qtyText by remember { mutableStateOf(entry.quantity.toString()) }
 
-            // Cuando entry.quantity cambia (por ejemplo por onIncrease desde ViewModel),
-            // actualizamos qtyText para que la UI muestre el valor real.
             LaunchedEffect(entry.quantity) {
                 qtyText = entry.quantity.toString()
             }
@@ -188,14 +205,12 @@ fun CartRow(
             OutlinedTextField(
                 value = qtyText,
                 onValueChange = { v ->
-                    // mantener solo dígitos (evita que el usuario escriba espacios/letras)
                     val filtered = v.filter { it.isDigit() }
-                    qtyText = filtered
+                    val safe = if (filtered.isBlank()) "0" else filtered
+                    qtyText = safe
 
-                    // si hay un número válido lo pasamos al repo
-                    val intV = filtered.toIntOrNull()
+                    val intV = safe.toIntOrNull()
                     if (intV != null) {
-                        // opcional: podrías limitar intV al stock máximo aquí
                         val limited = intV.coerceIn(0, entry.product.stock)
                         if (limited != entry.quantity) {
                             onSetQuantity(limited)
